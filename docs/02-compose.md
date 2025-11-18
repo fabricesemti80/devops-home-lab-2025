@@ -55,6 +55,11 @@ Successfully tagged game-app-laptop-demo-frontend:latest
 ```
 
 ```bash
+# Copy the env file example (optionally edit it)
+cp env/env.example .env
+```
+
+```bash
 # Start all services in background
 docker-compose up -d
 ```
