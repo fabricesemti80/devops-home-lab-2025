@@ -26,21 +26,25 @@ Monitoring isn't optional in production. This tutorial teaches you the same obse
 If you want to get monitoring working quickly:
 
 ```bash
-# 1. Deploy monitoring stack
+# 1. Install Prometheus Operator CRDs
+kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/main/example/prometheus-operator-crd/monitoring.coreos.com_servicemonitors.yaml
+kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/main/example/prometheus-operator-crd/monitoring.coreos.com_prometheusrules.yaml
+
+# 2. Deploy monitoring stack
 kubectl create namespace monitoring
 kubectl apply -f k8s/prometheus-rbac.yaml
 kubectl apply -f k8s/monitoring.yaml
 
-# 2. Start port-forwards
+# 3. Start port-forwards
 kubectl port-forward svc/prometheus 9090:9090 -n monitoring &
 kubectl port-forward svc/grafana 3000:3000 -n monitoring &
 kubectl port-forward svc/backend 3001:3001 -n humor-game &
 
-# 3. Generate sample data
+# 4. Generate sample data
 chmod +x scripts/populate-game-metrics.sh
 ./scripts/populate-game-metrics.sh
 
-# 4. Access dashboards and import comprehensive dashboard
+# 5. Access dashboards and import comprehensive dashboard
 # Grafana: http://localhost:3000 (admin/admin123)
 # Import: k8s/comprehensive-dashboard.json
 or 
@@ -57,6 +61,33 @@ or
 
 ### Step 1: Deploy Monitoring Infrastructure
 
+**Step 1a: Install Prometheus Operator CRDs**
+
+First, install the Custom Resource Definitions (CRDs) needed for ServiceMonitors:
+
+```bash
+# Install ServiceMonitor CRD
+kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/main/example/prometheus-operator-crd/monitoring.coreos.com_servicemonitors.yaml
+
+# Install PrometheusRule CRD (for alerting rules)
+kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/main/example/prometheus-operator-crd/monitoring.coreos.com_prometheusrules.yaml
+```
+
+**Expected Output:**
+```bash
+customresourcedefinition.apiextensions.k8s.io/servicemonitors.monitoring.coreos.com created
+customresourcedefinition.apiextensions.k8s.io/prometheusrules.monitoring.coreos.com created
+```
+
+> **💡 Why ServiceMonitors?**
+> ServiceMonitors are Kubernetes-native resources that automatically discover and scrape metrics from services based on labels. They provide:
+> - Dynamic service discovery without manual configuration
+> - Namespace isolation for multi-tenant clusters
+> - Declarative configuration as Kubernetes resources
+> - Better integration with the Prometheus Operator ecosystem
+
+**Step 1b: Create Monitoring Namespace and RBAC**
+
 ```bash
 # Create monitoring namespace and RBAC permissions
 kubectl apply -f k8s/prometheus-rbac.yaml
@@ -69,6 +100,8 @@ serviceaccount/prometheus created
 clusterrole.rbac.authorization.k8s.io/prometheus created
 clusterrolebinding.rbac.authorization.k8s.io/prometheus created
 ```
+
+**Step 1c: Deploy Prometheus and Grafana Stack**
 
 ```bash
 # Deploy Prometheus and Grafana stack
@@ -83,6 +116,7 @@ deployment.apps/prometheus created
 deployment.apps/grafana created
 service/prometheus created
 service/grafana created
+```
 
 ```bash
 # Wait for monitoring services to be ready (this takes a few minutes)
@@ -447,7 +481,26 @@ Your monitoring is working when:
 
 ## If It Fails
 
+### Symptom: "no matches for kind ServiceMonitor" error
+
+**Cause:** Prometheus Operator CRDs not installed
+**Command to confirm:** `kubectl apply -f k8s/monitoring.yaml`
+**Fix:**
+```bash
+# Install the required CRDs
+kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/main/example/prometheus-operator-crd/monitoring.coreos.com_servicemonitors.yaml
+kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/main/example/prometheus-operator-crd/monitoring.coreos.com_prometheusrules.yaml
+
+# Verify CRDs are installed
+kubectl get crd | grep monitoring.coreos.com
+# Expected: servicemonitors.monitoring.coreos.com and prometheusrules.monitoring.coreos.com
+
+# Now apply monitoring stack
+kubectl apply -f k8s/monitoring.yaml
+```
+
 ### Symptom: Dashboard shows "No data"
+
 **Cause:** Dashboard queries looking for metrics that don't exist yet
 **Command to confirm:** Check what metrics are actually available
 **Fix:**
@@ -522,7 +575,32 @@ kubectl get clusterrole | grep prometheus
 kubectl apply -f k8s/prometheus-rbac.yaml
 ```
 
+### Symptom: Ingress URLs timeout or don't load
+
+**Cause:** Port 8080 conflict with other applications (VSCode, other dev servers)
+**Command to confirm:** `lsof -i :8080`
+**Fix:**
+```bash
+# Check what's using port 8080
+lsof -i :8080
+
+# If you see processes other than OrbStack/Docker, close them
+# Common culprits: VSCode Live Server, other dev servers
+
+# Test the connection
+curl http://prometheus.gameapp.local:8080 --max-time 5
+curl http://grafana.gameapp.local:8080 --max-time 5
+
+# If still not working, flush DNS cache
+sudo dscacheutil -flushcache
+sudo killall -HUP mDNSResponder
+
+# Verify /etc/hosts entries exist
+cat /etc/hosts | grep gameapp.local
+```
+
 ### Symptom: Port-forwarding not working
+
 **Cause:** Port conflicts or processes already using ports
 **Command to confirm:** `lsof -i :3000` and `lsof -i :9090`
 **Fix:**
