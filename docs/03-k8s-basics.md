@@ -31,18 +31,8 @@ k3d registry create k3d-registry --port 5000
 ```
 
 ```bash
-# Create a local 3-node Kubernetes cluster
-k3d cluster create dev-cluster \
-  --servers 1 \
-  --agents 2 \
-  --port "8080:80@loadbalancer" \
-  --port "8443:443@loadbalancer"
-  OR
-
-  k3d cluster create dev-cluster --servers 1 --agents 2 --port "8080:80@loadbalancer" --port "8443:443@loadbalancer" --k3s-arg --disable=traefik@server:0
-
-  OR apply the k3d-config.yaml file
-  k3d cluster create --config k3d-config.yaml
+# Create a local 3-node Kubernetes cluster using the config file
+k3d cluster create --config k3d-config.yaml
 ```
 
 **Expected Output:**
@@ -68,10 +58,10 @@ kubectl get nodes -o wide
 
 **Expected Output:**
 ```bash
-NAME                    STATUS   ROLES                  AGE   VERSION        INTERNAL-IP     EXTERNAL-IP   OS-IMAGE   KERNEL-VERSION   CONTAINER-RUNTIME
-k3d-dev-cluster-server-0   Ready    control-plane,master   2m    v1.28.0+k3s1   172.18.0.2     <none>        Alpine Linux v3.18  6.1.0-13-amd64   containerd://1.7.11
-k3d-dev-cluster-agent-0    Ready    <none>                 2m    v1.28.0+k3s1   172.18.0.3     <none>        Alpine Linux v3.18  6.1.0-13-amd64   containerd://1.7.11
-k3d-dev-cluster-agent-1    Ready    <none>                 2m    v1.28.0+k3s1   172.18.0.4     <none>        Alpine Linux v3.18  6.1.0-13-amd64   containerd://1.7.11
+NAME                       STATUS   ROLES                  AGE   VERSION        INTERNAL-IP     EXTERNAL-IP   OS-IMAGE           KERNEL-VERSION                        CONTAINER-RUNTIME
+k3d-dev-cluster-server-0   Ready    control-plane,master   2m    v1.33.4+k3s1   192.168.147.3   <none>        K3s v1.33.4+k3s1   6.17.4-orbstack-00308-g195e9689a04f   containerd://2.0.5-k3s2
+k3d-dev-cluster-agent-0    Ready    <none>                 2m    v1.33.4+k3s1   192.168.147.4   <none>        K3s v1.33.4+k3s1   6.17.4-orbstack-00308-g195e9689a04f   containerd://2.0.5-k3s2
+k3d-dev-cluster-agent-1    Ready    <none>                 2m    v1.33.4+k3s1   192.168.147.5   <none>        K3s v1.33.4+k3s1   6.17.4-orbstack-00308-g195e9689a04f   containerd://2.0.5-k3s2
 ```
 
 ```bash
@@ -82,9 +72,9 @@ kubectl cluster-info
 
 **Expected Output:**
 ```bash
-Kubernetes control plane is running at https://0.0.0.0:6443
-CoreDNS is running at https://0.0.0.0:6443/api/v1/namespaces/kube-system/services/kube-dns:dns/proxy
-Metrics-server is running at https://0.0.0.0:6443/api/v1/namespaces/kube-system/services/kube-dns:dns/proxy
+Kubernetes control plane is running at https://0.0.0.0:51153
+CoreDNS is running at https://0.0.0.0:51153/api/v1/namespaces/kube-system/services/kube-dns:dns/proxy
+Metrics-server is running at https://0.0.0.0:51153/api/v1/namespaces/kube-system/services/https:metrics-server:https/proxy
 ```
 
 ### Step 2: Deploy Your Application Configuration
@@ -297,10 +287,10 @@ Forwarding from 127.0.0.1:3000 -> 80
 
 **Cluster Status:**
 ```bash
-NAME                    STATUS   ROLES                  AGE   VERSION
-k3d-dev-cluster-server-0   Ready    control-plane,master   5m    v1.28.0+k3s1
-k3d-dev-cluster-agent-0    Ready    <none>                 5m    v1.28.0+k3s1
-k3d-dev-cluster-agent-1    Ready    <none>                 5m    v1.28.0+k3s1
+NAME                       STATUS   ROLES                  AGE   VERSION
+k3d-dev-cluster-server-0   Ready    control-plane,master   5m    v1.33.4+k3s1
+k3d-dev-cluster-agent-0    Ready    <none>                 5m    v1.33.4+k3s1
+k3d-dev-cluster-agent-1    Ready    <none>                 5m    v1.33.4+k3s1
 ```
 
 **Application Pods:**
@@ -400,7 +390,7 @@ kubectl get nodes -o wide
 
 # If nodes show Ready but pods can't communicate, recreate cluster
 k3d cluster delete dev-cluster
-k3d cluster create dev-cluster --servers 1 --agents 2 --port "8080:80@loadbalancer" --port "8443:443@loadbalancer" --k3s-arg --disable=traefik@server:0
+k3d cluster create --config k3d-config.yaml
 
 # Redeploy all components
 kubectl apply -f k8s/namespace.yaml

@@ -546,7 +546,7 @@ kubectl top pods -n humor-game
 
 **Expected Output:**
 ```bash
-NAME                    CPU(cores)   CPU%   MEMORY(bytes)   MEMORY%
+NAME                       CPU(cores)   CPU%   MEMORY(bytes)   MEMORY%
 k3d-dev-cluster-server-0   45m          2%     1.2Gi          30%
 k3d-dev-cluster-agent-0    23m          1%     856Mi          21%
 k3d-dev-cluster-agent-1    18m          1%     789Mi          19%

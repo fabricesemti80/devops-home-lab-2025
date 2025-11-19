@@ -218,6 +218,8 @@ colima start --cpu 2 --memory 4 --disk 20
 k3d cluster create dev-cluster \
   --servers 1 \
   --agents 1 \
+  --port "8080:80@loadbalancer" \
+  --port "8443:443@loadbalancer" \
   --k3s-arg --disable=traefik@server:0
 
 # Monitor resource usage:
@@ -288,7 +290,7 @@ docker-compose exec redis redis-cli ping
 k3d cluster list
 
 # If cluster missing, recreate
-k3d cluster delete humor-game-cluster
+k3d cluster delete dev-cluster
 k3d cluster create --config k3d-config.yaml
 
 # Check nodes

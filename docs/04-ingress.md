@@ -306,7 +306,7 @@ kubectl top nodes
 
 # If resources are low, use minimal cluster
 k3d cluster delete dev-cluster
-k3d cluster create dev-cluster --servers 1 --agents 1 --k3s-arg --disable=traefik@server:0
+k3d cluster create dev-cluster --servers 1 --agents 1 --port "8080:80@loadbalancer" --port "8443:443@loadbalancer" --k3s-arg --disable=traefik@server:0
 ```
 
 ### Symptom: Ingress not accessible through k3d load balancer

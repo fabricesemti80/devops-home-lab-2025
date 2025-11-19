@@ -23,7 +23,7 @@ help: ## Show this help message
 
 setup-cluster: ## Create and configure k3d cluster
 	@echo "🚀 Creating k3d cluster..."
-	k3d cluster create dev-cluster --port "8080:80@loadbalancer" --port "8090:443@loadbalancer" || true
+	k3d cluster create --config k3d-config.yaml || true
 	@echo "⏳ Waiting for cluster to be ready..."
 	kubectl wait --for=condition=Ready nodes --all --timeout=60s
 	@echo "✅ Cluster ready!"

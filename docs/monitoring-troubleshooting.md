@@ -69,7 +69,7 @@ This document details the monitoring issues encountered during the home lab setu
 docker build -t humor-game-backend:latest ./backend
 
 # 2. Import to k3d (CRITICAL STEP!)
-k3d image import humor-game-backend:latest -c humor-game-cluster
+k3d image import humor-game-backend:latest -c dev-cluster
 
 # 3. Restart deployment
 kubectl rollout restart deployment/backend -n humor-game
@@ -134,7 +134,7 @@ curl -s "http://gameapp.local:8080/debug/test"
 docker images | grep humor-game
 
 # Import to k3d
-k3d image import humor-game-backend:latest -c humor-game-cluster
+k3d image import humor-game-backend:latest -c dev-cluster
 
 # Restart deployment
 kubectl rollout restart deployment/backend -n humor-game
@@ -281,7 +281,7 @@ kubectl rollout restart deployment/backend -n humor-game
 docker build -t humor-game-backend:latest ./backend
 
 # CORRECT: Import image directly to k3d cluster (CRITICAL STEP)
-k3d image import humor-game-backend:latest -c humor-game-cluster
+k3d image import humor-game-backend:latest -c dev-cluster
 
 # CORRECT: Restart deployment to use new image
 kubectl rollout restart deployment/backend -n humor-game
@@ -380,7 +380,7 @@ docker images | grep humor-game
 # Expected output: Images tagged as humor-game-backend:latest and humor-game-frontend:latest
 
 # Import updated images to k3d cluster
-k3d image import humor-game-backend:latest -c humor-game-cluster
+k3d image import humor-game-backend:latest -c dev-cluster
 # Expected output: Successful import confirmation
 
 # Restart deployment to use new images
