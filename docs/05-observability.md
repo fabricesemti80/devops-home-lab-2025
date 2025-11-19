@@ -605,13 +605,51 @@ cat /etc/hosts | grep gameapp.local
 **Command to confirm:** `lsof -i :3000` and `lsof -i :9090`
 **Fix:**
 ```bash
-# Kill conflicting processes
+# Check what's using the ports
+lsof -i :3000
+lsof -i :9090
+
+# Kill ALL kubectl port-forwards (recommended)
+pkill -f "kubectl port-forward"
+
+# Or kill specific port processes
 lsof -ti:3000 | xargs kill -9
 lsof -ti:9090 | xargs kill -9
 
-# Restart port-forwards
+# Verify ports are free
+lsof -i :3000 -i :9090 -i :3001
+# Should return empty
+
+# Restart port-forwards in correct order
+kubectl port-forward -n monitoring svc/prometheus 9090:9090 &
+kubectl port-forward -n monitoring svc/grafana 3000:3000 &
+kubectl port-forward -n humor-game svc/backend 3001:3001 &
+```
+
+### Symptom: Wrong service on port 3000 (seeing game instead of Grafana)
+
+**Cause:** Old port-forward from frontend service still running on port 3000
+**Command to confirm:** `ps aux | grep "kubectl port-forward" | grep -v grep`
+**Fix:**
+```bash
+# Check all active port-forwards
+ps aux | grep "kubectl port-forward" | grep -v grep
+
+# Kill all port-forwards
+pkill -f "kubectl port-forward"
+
+# Verify ports are free
+lsof -i :3000
+# Should return empty
+
+# Start fresh with correct port-forwards
 kubectl port-forward -n monitoring svc/grafana 3000:3000 &
 kubectl port-forward -n monitoring svc/prometheus 9090:9090 &
+kubectl port-forward -n humor-game svc/backend 3001:3001 &
+
+# Verify Grafana is accessible
+curl -I http://localhost:3000
+# Should show "HTTP/1.1 302 Found" and "Location: /login"
 ```
 
 ## 💡 **Reset/Rollback Commands**

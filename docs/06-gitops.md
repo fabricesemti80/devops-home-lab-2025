@@ -128,16 +128,20 @@ open http://localhost:8090
 ```bash
 # Create ArgoCD namespace
 kubectl create namespace argocd
+```
 
 **Expected Output:**
 ```bash
 namespace/argocd created
 ```
 
+```bash
 # Install ArgoCD
 kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+```
 
 **Expected Output:**
+
 ```bash
 namespace/argocd created
 serviceaccount/argocd-application-controller created
@@ -151,20 +155,30 @@ deployment.apps/argocd-server created
 service/argocd-server created
 ```
 
+```bash
 # Wait for ArgoCD to be ready (this takes several minutes)
-kubectl wait --for=condition=ready pod -l app.kubernetes.io/component=server -n argocd --timeout=300s
+kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=argocd-server -n argocd --timeout=300s
 
+# If you get "error: no matching resources found", the pods are still being created
+# Check status with: kubectl get pods -n argocd
+# Wait a few seconds and try again, or use: kubectl wait --for=condition=Ready pods --all -n argocd --timeout=300s
+```
+
+```bash
 # Get the initial admin password
 kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
 # Save this password - you'll need it to login
+```
 
 **Expected Output:**
 ```bash
 EouvoDGN7grkK-Ag
 ```
 
+```bash
 # Access ArgoCD UI
 kubectl port-forward svc/argocd-server -n argocd 8090:443 &
+```
 
 **Expected Output:**
 ```bash
@@ -172,6 +186,7 @@ Forwarding from 127.0.0.1:8090 -> 443
 Forwarding from [::1]:8090 -> 443
 ```
 
+```bash
 # Open ArgoCD UI in browser
 open http://localhost:8090
 # Login credentials:
@@ -421,6 +436,25 @@ Your GitOps workflow is working when:
 - ✅ Your working app continues running without interruption
 
 ## If It Fails
+
+### Symptom: "error: no matching resources found" when waiting for ArgoCD
+
+**Cause:** Pods haven't been created yet - they're still being deployed
+**Command to confirm:** `kubectl get pods -n argocd`
+**Fix:**
+```bash
+# Check if pods exist
+kubectl get pods -n argocd
+
+# If pods are being created (ContainerCreating, Pending), wait a few seconds
+sleep 10
+
+# Then wait for all pods to be ready
+kubectl wait --for=condition=Ready pods --all -n argocd --timeout=300s
+
+# Or wait for specific argocd-server pod
+kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=argocd-server -n argocd --timeout=300s
+```
 
 ### Symptom: ArgoCD shows "Missing" status (Most Common for Beginners)
 **Cause:** Git configuration differs from cluster state - this is actually GitOps working correctly!
