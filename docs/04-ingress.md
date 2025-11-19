@@ -79,13 +79,24 @@ deployment "ingress-nginx-controller" successfully rolled out
 ```
 
 ```bash
+# Create ArgoCD namespace (needed for ingress, even if ArgoCD not deployed yet)
+kubectl create namespace argocd --dry-run=client -o yaml | kubectl apply -f -
+```
+
+**Expected Output:**
+```bash
+namespace/argocd created
+```
+
+```bash
 # Deploy your application's ingress rules
 kubectl apply -f k8s/ingress.yaml
 ```
 
 **Expected Output:**
 ```bash
-ingress.networking.k8s.io/humor-game-ingress configured
+ingress.networking.k8s.io/humor-game-ingress created
+ingress.networking.k8s.io/argocd-ingress created
 ```
 
 ```bash

@@ -39,6 +39,7 @@ install-ingress: ## Install NGINX Ingress Controller
 deploy-app: ## Deploy the main application (postgres, redis, backend, frontend)
 	@echo "🎮 Deploying main application..."
 	kubectl apply -f k8s/namespace.yaml
+	kubectl create namespace argocd --dry-run=client -o yaml | kubectl apply -f -
 	kubectl apply -f k8s/configmap.yaml
 	kubectl apply -f k8s/postgres.yaml
 	kubectl apply -f k8s/redis.yaml

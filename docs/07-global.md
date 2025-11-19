@@ -256,6 +256,9 @@ spec:
 
 #### **4.4: Apply All Ingress Changes**
 ```bash
+# Create ArgoCD namespace if not exists (needed for ingress)
+kubectl create namespace argocd --dry-run=client -o yaml | kubectl apply -f -
+
 # Apply main application ingress
 kubectl apply -f k8s/ingress.yaml
 
