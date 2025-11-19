@@ -270,6 +270,7 @@ k3d cluster delete dev-cluster
 - 🎓 **Learning**: [FAQ Section](docs/09-faq.md)
 
 ### **🔧 Common Issues**
+- **Port conflicts**: Run `make check-ports` before cluster creation
 - **Pods stuck in pending**: Check resource availability with `kubectl describe`
 - **Services not accessible**: Verify ingress configuration and DNS
 - **ArgoCD redirect loops**: See [troubleshooting guide](docs/08-troubleshooting.md#argocd-issues)

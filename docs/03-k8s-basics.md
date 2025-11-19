@@ -23,6 +23,56 @@ Kubernetes is the industry standard for deploying applications at scale. Compani
 
 ## Do This
 
+### Step 0: Verify Port Availability (Pre-requisite)
+
+Before creating the cluster, ensure required ports are available:
+
+```bash
+# Check if critical ports are in use
+lsof -i :8080 -i :8443 -i :3000 -i :3001 -i :8090 -i :9090 -i :5000 2>/dev/null
+```
+
+**Expected Output:**
+```bash
+# Should return empty (no output) if all ports are free
+```
+
+**If ports are in use:**
+```bash
+# Find what's using the ports
+lsof -i :8080  # k3d load balancer HTTP
+lsof -i :8443  # k3d load balancer HTTPS
+lsof -i :3000  # Grafana port-forward
+lsof -i :3001  # Backend port-forward
+lsof -i :8090  # ArgoCD port-forward
+lsof -i :9090  # Prometheus port-forward
+lsof -i :5000  # k3d registry
+
+# Check if it's an existing k3d cluster
+k3d cluster list
+
+# If you see OrbStack using 8080/8443, check if it's your k3d cluster:
+docker ps --filter "name=k3d" --format "table {{.Names}}\t{{.Ports}}"
+
+# If it's an old cluster you want to replace:
+k3d cluster delete dev-cluster
+
+# If it's other processes blocking ports:
+pkill -f "kubectl port-forward"  # Stop port-forwards
+# Or kill specific process: kill -9 <PID>
+```
+
+**Note for OrbStack users:** If you see OrbStack processes using ports 8080/8443, this is likely your k3d cluster running (k3d uses OrbStack as the container runtime). Check `k3d cluster list` to confirm.
+
+**Port Usage Summary:**
+- **8080** - k3d load balancer (HTTP) - maps to cluster port 80
+- **8443** - k3d load balancer (HTTPS) - maps to cluster port 443
+- **3000** - Grafana dashboard (port-forward)
+- **3001** - Backend API (port-forward)
+- **8090** - ArgoCD UI (port-forward)
+- **9090** - Prometheus UI (port-forward)
+- **5000** - k3d Docker registry
+
 ### Step 1: Create Your Kubernetes Cluster
 
 ```bash

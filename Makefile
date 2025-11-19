@@ -21,7 +21,7 @@ help: ## Show this help message
 
 ##@ 🚀 Deployment Commands
 
-setup-cluster: ## Create and configure k3d cluster
+setup-cluster: check-ports ## Create and configure k3d cluster
 	@echo "🚀 Creating k3d cluster..."
 	k3d cluster create --config k3d-config.yaml || true
 	@echo "⏳ Waiting for cluster to be ready..."
@@ -166,6 +166,29 @@ clean-all: clean-cluster ## Nuclear option - remove everything
 	@echo "💥 Everything cleaned! Run 'make deploy-all' to start over."
 
 ##@ 🔧 Utility Commands
+
+check-ports: ## Check if required ports are available
+	@echo "🔍 Checking port availability..."
+	@echo ""
+	@echo "Required ports: 8080, 8443, 3000, 3001, 8090, 9090, 5000"
+	@echo ""
+	@if k3d cluster list 2>/dev/null | grep -q "dev-cluster"; then \
+		echo "✅ dev-cluster already exists and is using ports 8080, 8443"; \
+		echo "   Run 'k3d cluster delete dev-cluster' to recreate"; \
+	elif lsof -i :8080 -i :8443 -i :3000 -i :3001 -i :8090 -i :9090 -i :5000 2>/dev/null; then \
+		echo ""; \
+		echo "⚠️  Some ports are in use!"; \
+		echo ""; \
+		echo "💡 Check what's using them:"; \
+		echo "   k3d cluster list                  # Check for existing clusters"; \
+		echo "   docker ps --filter 'name=k3d'     # Check k3d containers"; \
+		echo ""; \
+		echo "💡 To free ports:"; \
+		echo "   pkill -f 'kubectl port-forward'   # Stop port-forwards"; \
+		echo "   k3d cluster delete dev-cluster    # Remove existing cluster"; \
+	else \
+		echo "✅ All required ports are available!"; \
+	fi
 
 logs-app: ## Show application logs
 	@echo "📋 Application Logs:"
