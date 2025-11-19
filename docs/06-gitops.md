@@ -285,6 +285,7 @@ spec:
 ```bash
 # Apply ArgoCD project
 kubectl apply -f gitops-safe/argocd-project.yaml
+```
 
 **Expected Output:**
 ```bash
@@ -292,7 +293,9 @@ appproject.argoproj.io/humor-game-safe created
 ```
 
 # Apply ArgoCD application
+```bash
 kubectl apply -f gitops-safe/argocd-application.yaml
+```
 
 **Expected Output:**
 ```bash
@@ -300,13 +303,14 @@ application.argoproj.io/humor-game-monitor created
 ```
 
 # Check status
+```bash
 kubectl get applications -n argocd
+```
 
 **Expected Output:**
 ```bash
 NAME                 SYNC STATUS   HEALTH STATUS
 humor-game-monitor   OutOfSync     Missing
-```
 ```
 
 ### Step 5: Verify GitOps Setup
@@ -519,6 +523,117 @@ kubectl kustomize .
 
 # Check for YAML syntax errors
 kubectl apply --dry-run=client -k .
+```
+
+### Symptom: "application repo is not permitted in project" error
+**Cause:** ArgoCD project doesn't allow your Git repository URL
+**Command to confirm:** `kubectl describe application humor-game-monitor -n argocd | grep "not permitted"`
+**Fix:**
+```bash
+# Check current allowed repos in project
+kubectl get appproject humor-game-safe -n argocd -o jsonpath='{.spec.sourceRepos}'
+
+# Update project to allow your repository
+# Edit gitops-safe/argocd-project.yaml and change:
+# sourceRepos:
+# - 'https://github.com/YOUR-USERNAME/YOUR-REPO.git'
+
+# Apply the updated project
+kubectl apply -f gitops-safe/argocd-project.yaml
+
+# Commit and push changes
+git add gitops-safe/argocd-project.yaml
+git commit -m "Fix: Update allowed repository in ArgoCD project"
+git push origin dev
+```
+
+### Symptom: "spec.selector: Invalid value: field is immutable" error
+**Cause:** Kustomization commonLabels trying to modify deployment selectors, which are immutable in Kubernetes
+**Command to confirm:** `kubectl describe application humor-game-monitor -n argocd | grep "immutable"`
+**Fix:**
+```bash
+# The issue is in gitops-safe/overlays/dev/kustomization.yaml
+# Comment out or remove commonLabels that modify selectors
+
+# Edit kustomization.yaml and comment out commonLabels:
+# commonLabels:
+#   app.kubernetes.io/name: humor-game
+#   app.kubernetes.io/instance: dev
+
+# Commit and push the fix
+git add gitops-safe/overlays/dev/kustomization.yaml
+git commit -m "Fix: Remove commonLabels to avoid deployment selector conflicts"
+git push origin dev
+
+# Sync the application
+kubectl patch application humor-game-monitor -n argocd --type merge -p '{"operation":{"initiatedBy":{"username":"admin"},"sync":{"revision":"HEAD"}}}'
+
+# Verify sync status
+kubectl get application humor-game-monitor -n argocd
+```
+
+### Symptom: ArgoCD pointing to wrong Git repository or branch
+**Cause:** Application configured with original/forked repo URL instead of your repository
+**Command to confirm:** `kubectl get application humor-game-monitor -n argocd -o jsonpath='{.spec.source.repoURL}'`
+**Fix:**
+```bash
+# Check current repo URL
+kubectl get application humor-game-monitor -n argocd -o jsonpath='{.spec.source.repoURL}' && echo
+
+# Check your actual Git remote
+git remote -v
+
+# Update gitops-safe/argocd-application.yaml with YOUR repository:
+# source:
+#   repoURL: https://github.com/YOUR-USERNAME/YOUR-REPO.git
+#   targetRevision: YOUR-BRANCH  # e.g., dev or main
+
+# Apply the updated application
+kubectl apply -f gitops-safe/argocd-application.yaml
+
+# Commit and push changes
+git add gitops-safe/argocd-application.yaml
+git commit -m "Fix: Update ArgoCD application to point to correct repository"
+git push origin dev
+```
+
+### Symptom: Uncommitted changes causing OutOfSync status
+**Cause:** Local changes not pushed to Git, so ArgoCD can't see them
+**Command to confirm:** `git status`
+**Fix:**
+```bash
+# Check for uncommitted changes
+git status
+
+# Add all GitOps files
+git add gitops-safe/
+
+# Commit changes
+git commit -m "Update GitOps configuration"
+
+# Push to your repository
+git push origin dev
+
+# Wait a moment for ArgoCD to detect changes (or refresh manually)
+kubectl patch application humor-game-monitor -n argocd --type merge -p '{"operation":{"initiatedBy":{"username":"admin"},"sync":{"revision":"HEAD"}}}'
+```
+
+### Symptom: How to sync from command line instead of GUI
+**Cause:** Preference for CLI or automation
+**Command to confirm:** N/A
+**Fix:**
+```bash
+# Trigger sync via kubectl
+kubectl patch application humor-game-monitor -n argocd --type merge -p '{"operation":{"initiatedBy":{"username":"admin"},"sync":{"revision":"HEAD"}}}'
+
+# Check sync status
+kubectl get application humor-game-monitor -n argocd
+
+# Watch sync progress
+kubectl get application humor-game-monitor -n argocd -o jsonpath='{.status.sync.status}: {.status.health.status}'
+
+# Get detailed sync info
+kubectl describe application humor-game-monitor -n argocd | tail -30
 ```
 
 ## 💡 **Reset/Rollback Commands**
