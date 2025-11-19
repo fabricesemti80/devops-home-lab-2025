@@ -16,12 +16,12 @@ bases:
 # This will show ArgoCD what should be in the cluster
 resources: []
 
-# Common labels for tracking
-commonLabels:
-  app.kubernetes.io/name: humor-game
-  app.kubernetes.io/instance: dev
-  app.kubernetes.io/part-of: gitops-demo
-  app.kubernetes.io/managed-by: argocd
+# Common labels for tracking (commented out to avoid selector conflicts)
+# commonLabels:
+#   app.kubernetes.io/name: humor-game
+#   app.kubernetes.io/instance: dev
+#   app.kubernetes.io/part-of: gitops-demo
+#   app.kubernetes.io/managed-by: argocd
 
 # Common annotations for tracking
 commonAnnotations:
