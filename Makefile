@@ -168,6 +168,9 @@ clean-all: clean-cluster ## Nuclear option - remove everything
 
 ##@ 🔧 Utility Commands
 
+recover-cluster: ## Recover cluster after Mac restart
+	@./scripts/recover-cluster.sh
+
 check-ports: ## Check if required ports are available
 	@echo "🔍 Checking port availability..."
 	@echo ""
