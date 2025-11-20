@@ -11,15 +11,15 @@ By the end of this tutorial, you'll know how to:
 - **Handle SSL/TLS** for secure connections
 - **Debug networking issues** like a professional
 
-## ⏱️ **Time Required: 20-40 minutes**
+> **Time Required: 20-40 minutes**
 
-## Why This Matters
+### Why This Matters
 
 An Ingress Controller is like the front door to your application. It routes internet traffic to your services, handles SSL certificates, and provides load balancing. This is how real applications become accessible to users worldwide.
 
 **What this means for you**: Every production application needs networking. Learning Ingress teaches you how companies like Netflix and Airbnb make their services accessible to millions of users.
 
-ℹ️ **Simple Explanation:** An Ingress Controller is like a smart traffic director. It looks at incoming requests (like "go to gameapp.local") and routes them to the right service in your Kubernetes cluster.
+**Simple Explanation:** An Ingress Controller is like a smart traffic director. It looks at incoming requests (like "go to gameapp.local") and routes them to the right service in your Kubernetes cluster.
 
 ## Do This
 

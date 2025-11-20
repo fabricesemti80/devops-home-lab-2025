@@ -11,7 +11,7 @@ By the end of this tutorial, you'll know how to:
 - **Scale applications** automatically based on demand
 - **Monitor health** and troubleshoot issues
 
-## ⏱️ **Time Required: 30-60 minutes**
+> **Time Required: 30-60 minutes**
 
 ## 💼 Why This Matters
 
