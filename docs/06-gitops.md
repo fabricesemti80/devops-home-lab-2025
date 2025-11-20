@@ -489,7 +489,7 @@ kubectl patch application humor-game-monitor -n argocd --type='merge' -p='{"spec
 **Command to confirm:** Check ArgoCD UI for application status
 **Fix:**
 ```bash
-# Check ArgoCD can access your Git repository
+# Check ArgoCD can access your Git repository≥
 # In ArgoCD UI, go to Settings -> Repositories
 # Add your repository with proper credentials
 

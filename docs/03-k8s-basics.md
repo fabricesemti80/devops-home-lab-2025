@@ -13,7 +13,7 @@ By the end of this tutorial, you'll know how to:
 
 ## ⏱️ **Time Required: 30-60 minutes**
 
-## Why This Matters
+## 💼 Why This Matters
 
 Kubernetes is the industry standard for deploying applications at scale. Companies like Netflix, Airbnb, and GitHub use Kubernetes to manage thousands of services serving millions of users. Learning Kubernetes isn't just about technology—it's about understanding how modern applications are built and deployed.
 
@@ -21,46 +21,58 @@ Kubernetes is the industry standard for deploying applications at scale. Compani
 
 ℹ️ **Simple Explanation:** Kubernetes is like a smart manager for your applications. It automatically handles scaling (adding more copies when busy), health checks (restarting failed services), and updates (rolling out new versions without downtime).
 
-## Do This
+## 🚀 Do This
 
 ### Step 0: Verify Port Availability (Pre-requisite)
 
-Before creating the cluster, ensure required ports are available:
+Before creating the cluster, ensure required ports are available.
 
+**Run this command:**
 ```bash
-# Check if critical ports are in use
 lsof -i :8080 -i :8443 -i :3000 -i :3001 -i :8090 -i :9090 -i :5000 2>/dev/null
 ```
 
-**Expected Output:**
-```bash
-# Should return empty (no output) if all ports are free
+**Expected Output (all ports free):**
+```
+(no output - all ports are available)
 ```
 
-**If ports are in use:**
+**OR if you already created the k3d registry:**
+```
+COMMAND   PID USER   FD   TYPE   DEVICE SIZE/OFF NODE NAME
+registry  xxx   fs   xx   IPv6   xxxxxx      0t0  TCP *:5000 (LISTEN)
+```
+✅ This is fine! The k3d registry on port 5000 is expected and will be used by the cluster.
+
+**If other ports are in use, troubleshoot:**
+
+Find what's using each port:
 ```bash
-# Find what's using the ports
 lsof -i :8080  # k3d load balancer HTTP
 lsof -i :8443  # k3d load balancer HTTPS
 lsof -i :3000  # Grafana port-forward
 lsof -i :3001  # Backend port-forward
 lsof -i :8090  # ArgoCD port-forward
 lsof -i :9090  # Prometheus port-forward
-lsof -i :5000  # k3d registry
-
-# Check if it's an existing k3d cluster
-k3d cluster list
-
-# If you see OrbStack using 8080/8443, check if it's your k3d cluster:
-docker ps --filter "name=k3d" --format "table {{.Names}}\t{{.Ports}}"
-
-# If it's an old cluster you want to replace:
-k3d cluster delete dev-cluster
-
-# If it's other processes blocking ports:
-pkill -f "kubectl port-forward"  # Stop port-forwards
-# Or kill specific process: kill -9 <PID>
 ```
+
+Check if it's an existing k3d cluster:
+```bash
+k3d cluster list
+docker ps --filter "name=k3d" --format "table {{.Names}}\t{{.Ports}}"
+```
+
+Delete old cluster if needed:
+```bash
+k3d cluster delete dev-cluster
+```
+
+Stop port-forwards:
+```bash
+pkill -f "kubectl port-forward"
+```
+
+**⚠️ Note:** The k3d registry on port 5000 is expected and should remain running. Don't stop it!
 
 **Note for OrbStack users:** If you see OrbStack processes using ports 8080/8443, this is likely your k3d cluster running (k3d uses OrbStack as the container runtime). Check `k3d cluster list` to confirm.
 
@@ -75,13 +87,13 @@ pkill -f "kubectl port-forward"  # Stop port-forwards
 
 ### Step 1: Create Your Kubernetes Cluster
 
+**Create a local Docker image registry:**
 ```bash
-# Create a local Docker image registry (needed for pushing images used by Kubernetes (k3d) cluster)
 k3d registry create k3d-registry --port 5000
 ```
 
+**Create a local 3-node Kubernetes cluster:**
 ```bash
-# Create a local 3-node Kubernetes cluster using the config file
 k3d cluster create --config k3d-config.yaml
 ```
 
@@ -98,12 +110,9 @@ INFO[0000] Starting helpers
 INFO[0000] Cluster 'dev-cluster' created successfully!
 ```
 
+**Verify cluster is running:**
 ```bash
-# Verify cluster is running
 kubectl get nodes
-
-kubectl get nodes -o wide
-# Should show 3 nodes: 1 server, 2 agents, all "Ready"
 ```
 
 **Expected Output:**
@@ -114,10 +123,9 @@ k3d-dev-cluster-agent-0    Ready    <none>                 2m    v1.33.4+k3s1   
 k3d-dev-cluster-agent-1    Ready    <none>                 2m    v1.33.4+k3s1   192.168.147.5   <none>        K3s v1.33.4+k3s1   6.17.4-orbstack-00308-g195e9689a04f   containerd://2.0.5-k3s2
 ```
 
+**Check cluster health:**
 ```bash
-# Check cluster health
 kubectl cluster-info
-# Should show cluster endpoint and DNS
 ```
 
 **Expected Output:**
@@ -129,8 +137,8 @@ Metrics-server is running at https://0.0.0.0:51153/api/v1/namespaces/kube-system
 
 ### Step 2: Deploy Your Application Configuration
 
+**Create the application namespace:**
 ```bash
-# Create the application namespace (organization)
 kubectl apply -f k8s/namespace.yaml
 ```
 
@@ -139,8 +147,8 @@ kubectl apply -f k8s/namespace.yaml
 namespace/humor-game created
 ```
 
+**Create configuration and secrets:**
 ```bash
-# Create configuration and secrets
 kubectl apply -f k8s/configmap.yaml
 kubectl apply -f k8s/secrets.yaml
 ```
@@ -152,8 +160,8 @@ configmap/frontend-config created
 secret/humor-game-secrets created
 ```
 
+**Verify they were created:**
 ```bash
-# Verify they were created
 kubectl get configmap -n humor-game
 kubectl get secrets -n humor-game
 ```
@@ -333,7 +341,7 @@ kubectl port-forward service/frontend 3000:80 -n humor-game &
 Forwarding from 127.0.0.1:3000 -> 80
 ```
 
-## You Should See...
+## 👀 You Should See...
 
 **Cluster Status:**
 ```bash
@@ -370,7 +378,7 @@ Your Kubernetes application is working when:
 - ✅ Database connections work (no errors in pod logs)
 - ✅ Redis connections work (no errors in pod logs)
 
-## If It Fails
+## 🔧 If It Fails
 
 ### Symptom: Pods stuck in "Pending" status
 **Cause:** Insufficient cluster resources or image pull issues
@@ -516,7 +524,7 @@ kubectl logs -f deployment/backend -n humor-game
 kubectl logs -f deployment/frontend -n humor-game
 ```
 
-## Clean Up Before Moving Forward
+## 🧹 Clean Up Before Moving Forward
 
 ```bash
 # Stop port-forwarding (if running)
@@ -527,7 +535,17 @@ kubectl get pods -n humor-game
 # Should show all pods in Running status
 ```
 
-## What You Learned
+## 🍎 Mac Users: Cluster Recovery After Restart
+
+**Important for macOS users**: When you restart your Mac, your k3d cluster will stop. Instead of recreating it (which loses all your work), use the recovery tool:
+
+```bash
+make recover-cluster
+```
+
+This automatically detects and fixes common Mac restart issues while preserving all your deployed applications.
+
+## 🎓 What You Learned
 
 You've successfully transformed your Docker Compose application into Kubernetes, including:
 - **Cluster management** with k3d (lightweight Kubernetes)
@@ -537,7 +555,7 @@ You've successfully transformed your Docker Compose application into Kubernetes,
 - **Service discovery** (ClusterIP services)
 - **Health monitoring** (pod status, logs)
 
-## Professional Skills Gained
+## 💪 Professional Skills Gained
 
 - **Kubernetes deployment** fundamentals
 - **Multi-container orchestration** in production-like environment

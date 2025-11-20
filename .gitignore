@@ -180,3 +180,6 @@ scripts/*secret*
 scripts/*deploy-with-secrets*
 
 backend.log
+
+# Kiro files
+.kiro/**
