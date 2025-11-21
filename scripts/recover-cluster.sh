@@ -337,6 +337,8 @@ simple_restart() {
     
     if start_cluster_with_retry; then
         if check_api_server; then
+            # Clean up any stuck pods after restart
+            cleanup_stuck_pods
             log_success "Simple restart successful!"
             return 0
         fi
@@ -411,11 +413,41 @@ report_recreation_needed() {
     log_warning "Note: This will remove all deployed applications"
 }
 
+# Clean up stuck terminating pods
+cleanup_stuck_pods() {
+    log_progress "Checking for stuck terminating pods..."
+    
+    local stuck_pods
+    stuck_pods=$(kubectl get pods -A --field-selector=status.phase=Terminating --no-headers 2>/dev/null | wc -l | tr -d ' ')
+    
+    if [ "$stuck_pods" -gt 0 ]; then
+        log_warning "Found $stuck_pods stuck terminating pod(s)"
+        log_action "Force deleting stuck pods..."
+        
+        kubectl get pods -A --field-selector=status.phase=Terminating --no-headers 2>/dev/null | \
+        while read -r namespace pod rest; do
+            log_info "Force deleting pod: $pod in namespace: $namespace"
+            kubectl delete pod "$pod" -n "$namespace" --force --grace-period=0 2>/dev/null || true
+        done
+        
+        # Wait a moment for cleanup
+        sleep 3
+        log_success "Stuck pods cleaned up"
+        return 0
+    else
+        log_success "No stuck pods found"
+        return 0
+    fi
+}
+
 # Validate cluster health after recovery
 validate_cluster_health() {
     log_progress "Validating cluster health..."
     
     local all_healthy=true
+    
+    # Clean up any stuck pods first
+    cleanup_stuck_pods
     
     # Check nodes
     if check_nodes_ready; then

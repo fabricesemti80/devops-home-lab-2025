@@ -28,6 +28,13 @@ else
     echo "ℹ️  grafana.gameapp.local already exists in /etc/hosts"
 fi
 
+if ! grep -q "argocd.gameapp.local" /etc/hosts; then
+    echo "127.0.0.1 argocd.gameapp.local" | sudo tee -a /etc/hosts
+    echo "✅ Added argocd.gameapp.local to /etc/hosts"
+else
+    echo "ℹ️  argocd.gameapp.local already exists in /etc/hosts"
+fi
+
 # Check ingress status
 echo "🔍 Checking ingress status..."
 kubectl get ingress -n monitoring
@@ -35,13 +42,14 @@ kubectl get ingress -n monitoring
 echo ""
 echo "🎉 Monitoring ingress setup complete!"
 echo ""
-echo "📊 Access your monitoring services:"
+echo "📊 Access your services:"
 echo "   Prometheus: http://prometheus.gameapp.local:8080"
-echo "   Grafana:   http://grafana.gameapp.local:8080"
+echo "   Grafana:    http://grafana.gameapp.local:8080"
+echo "   ArgoCD:     http://argocd.gameapp.local:8080"
 echo ""
-echo "🔐 Grafana credentials:"
-echo "   Username: admin"
-echo "   Password: admin123"
+echo "🔐 Credentials:"
+echo "   Grafana - Username: admin, Password: admin123"
+echo "   ArgoCD  - Username: admin, Password: (get with kubectl command)"
 echo ""
 echo "💡 Note: Make sure your k3d cluster is configured to expose port 8080"
 echo "   Run: k3d cluster create --port 8080:80@loadbalancer"

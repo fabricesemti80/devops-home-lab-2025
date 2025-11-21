@@ -47,6 +47,7 @@
 ## 🔧 **Reference Documentation**
 
 ### **📖 Technical References**
+- **[🌐 Hosts File Setup](hosts-setup.md)** - Configure local DNS for all services
 - **[🚨 Troubleshooting Guide](08-troubleshooting.md)** - Common issues and solutions
 - **[❓ Frequently Asked Questions](09-faq.md)** - Quick answers to common questions  
 - **[📖 Technical Glossary](10-glossary.md)** - Terms and definitions explained

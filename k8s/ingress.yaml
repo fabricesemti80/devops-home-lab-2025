@@ -8,6 +8,8 @@ metadata:
     # nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
     nginx.ingress.kubernetes.io/cors-allow-origin: "*"
     nginx.ingress.kubernetes.io/cors-allow-credentials: "true"
+    # Rewrite /api/* to /* for backend
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
     # cert-manager.io/cluster-issuer: "letsencrypt-prod"
 spec:
   ingressClassName: nginx
@@ -19,39 +21,17 @@ spec:
     - host: gameapp.local  # For local development (no SSL)
       http:
         paths:
-          # API routes - forward to backend
-          - path: /api
-            pathType: Prefix
-            backend:
-              service:
-                name: backend
-                port:
-                  number: 3001
-          # Backend endpoints - forward to backend
-          - path: /health
-            pathType: Exact
-            backend:
-              service:
-                name: backend
-                port:
-                  number: 3001
-          - path: /metrics
-            pathType: Exact
-            backend:
-              service:
-                name: backend
-                port:
-                  number: 3001
-          - path: /debug
-            pathType: Prefix
+          # API routes - forward to backend (strip /api prefix)
+          - path: /api(/|$)(.*)
+            pathType: ImplementationSpecific
             backend:
               service:
                 name: backend
                 port:
                   number: 3001
           # Everything else - serve from frontend
-          - path: /
-            pathType: Prefix
+          - path: /()(.*)
+            pathType: ImplementationSpecific
             backend:
               service:
                 name: frontend
@@ -62,39 +42,17 @@ spec:
     - host: gameapp.games  # For production (with SSL)
       http:
         paths:
-          # API routes - forward to backend
-          - path: /api
-            pathType: Prefix
-            backend:
-              service:
-                name: backend
-                port:
-                  number: 3001
-          # Backend endpoints - forward to backend
-          - path: /health
-            pathType: Exact
-            backend:
-              service:
-                name: backend
-                port:
-                  number: 3001
-          - path: /metrics
-            pathType: Exact
-            backend:
-              service:
-                name: backend
-                port:
-                  number: 3001
-          - path: /debug
-            pathType: Prefix
+          # API routes - forward to backend (strip /api prefix)
+          - path: /api(/|$)(.*)
+            pathType: ImplementationSpecific
             backend:
               service:
                 name: backend
                 port:
                   number: 3001
           # Everything else - serve from frontend
-          - path: /
-            pathType: Prefix
+          - path: /()(.*)
+            pathType: ImplementationSpecific
             backend:
               service:
                 name: frontend
@@ -105,39 +63,17 @@ spec:
     - host: app.gameapp.games
       http:
         paths:
-          # API routes - forward to backend
-          - path: /api
-            pathType: Prefix
-            backend:
-              service:
-                name: backend
-                port:
-                  number: 3001
-          # Backend endpoints - forward to backend
-          - path: /health
-            pathType: Exact
-            backend:
-              service:
-                name: backend
-                port:
-                  number: 3001
-          - path: /metrics
-            pathType: Exact
-            backend:
-              service:
-                name: backend
-                port:
-                  number: 3001
-          - path: /debug
-            pathType: Prefix
+          # API routes - forward to backend (strip /api prefix)
+          - path: /api(/|$)(.*)
+            pathType: ImplementationSpecific
             backend:
               service:
                 name: backend
                 port:
                   number: 3001
           # Everything else - serve from frontend
-          - path: /
-            pathType: Prefix
+          - path: /()(.*)
+            pathType: ImplementationSpecific
             backend:
               service:
                 name: frontend

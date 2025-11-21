@@ -80,9 +80,9 @@ deploy-all: setup-cluster install-ingress deploy-app deploy-monitoring deploy-gi
 	@echo ""
 	@echo "🌟 Your application is ready!"
 	@echo "🎮 Game: http://gameapp.local:8080"
-	@echo "📊 Grafana: http://localhost:3000 (port-forward required)"
-	@echo "📈 Prometheus: http://localhost:9090 (port-forward required)"
-	@echo "🔄 ArgoCD: http://localhost:8090 (port-forward required)"
+	@echo "📊 Grafana: http://grafana.gameapp.local:8080"
+	@echo "📈 Prometheus: http://prometheus.gameapp.local:8080"
+	@echo "🔄 ArgoCD: http://argocd.gameapp.local:8080"
 	@echo ""
 	@echo "Run 'make verify' to check everything is working!"
 
@@ -168,7 +168,7 @@ clean-all: clean-cluster ## Nuclear option - remove everything
 
 ##@ 🔧 Utility Commands
 
-recover-cluster: ## Recover cluster after Mac restart
+recover-cluster: ## Recover cluster after Mac restart (includes stuck pod cleanup)
 	@./scripts/recover-cluster.sh
 
 check-ports: ## Check if required ports are available
@@ -216,10 +216,14 @@ port-forward-prometheus: ## Port-forward to Prometheus (localhost:9090)
 	@echo "📈 Port-forwarding to Prometheus at http://localhost:9090"
 	kubectl port-forward svc/prometheus -n monitoring 9090:9090
 
-port-forward-argocd: ## Port-forward to ArgoCD (localhost:8090)
-	@echo "🔄 Port-forwarding to ArgoCD at http://localhost:8090"
-	@echo "📝 Get admin password with: kubectl get secret argocd-initial-admin-secret -n argocd -o jsonpath='{.data.password}' | base64 -d"
-	kubectl port-forward svc/argocd-server -n argocd 8090:443
+access-argocd: ## Show ArgoCD access information
+	@echo "🔄 ArgoCD Access (via Ingress):"
+	@echo "   URL: http://argocd.gameapp.local:8080"
+	@echo "   Username: admin"
+	@echo -n "   Password: "
+	@kubectl get secret argocd-initial-admin-secret -n argocd -o jsonpath='{.data.password}' 2>/dev/null | base64 -d && echo || echo "(ArgoCD not installed yet)"
+	@echo ""
+	@echo "💡 No port-forwarding needed - ArgoCD uses ingress like Grafana!"
 
 debug-pods: ## Show detailed pod information for troubleshooting
 	@echo "🔍 Pod Debug Information:"
@@ -236,11 +240,14 @@ debug-pods: ## Show detailed pod information for troubleshooting
 get-passwords: ## Show important passwords and access information
 	@echo "🔑 Access Information:"
 	@echo ""
-	@echo "🔄 ArgoCD Admin Password:"
-	@kubectl get secret argocd-initial-admin-secret -n argocd -o jsonpath='{.data.password}' | base64 -d && echo
+	@echo "🔄 ArgoCD:"
+	@echo "  URL: http://argocd.gameapp.local:8080"
+	@echo "  Username: admin"
+	@echo -n "  Password: "
+	@kubectl get secret argocd-initial-admin-secret -n argocd -o jsonpath='{.data.password}' 2>/dev/null | base64 -d && echo || echo "(ArgoCD not installed yet)"
 	@echo ""
-	@echo "📊 Grafana Access:"
-	@echo "  URL: http://localhost:3000 (with port-forward)"
+	@echo "📊 Grafana:"
+	@echo "  URL: http://grafana.gameapp.local:8080"
 	@echo "  Username: admin"
 	@echo "  Password: admin"
 	@echo ""

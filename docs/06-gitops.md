@@ -104,16 +104,16 @@ graph TB
 
 **Access ArgoCD UI:**
 ```bash
-# Start port-forwarding (if not already running)
-kubectl port-forward svc/argocd-server -n argocd 8090:443 &
-
-# Open in browser
-open http://localhost:8090
+# ArgoCD is accessible via ingress (no port-forwarding needed!)
+open http://argocd.gameapp.local:8080
 
 # Login credentials:
 # Username: admin
-# Password: EouvoDGN7grkK-Ag
+# Password: (get with command below)
+kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
 ```
+
+> **💡 Note:** ArgoCD uses ingress just like Grafana and the game app. This is more stable than port-forwarding.
 
 **What You'll See:**
 - Application: `humor-game-monitor`
@@ -176,23 +176,28 @@ EouvoDGN7grkK-Ag
 ```
 
 ```bash
-# Access ArgoCD UI
-kubectl port-forward svc/argocd-server -n argocd 8090:443 &
+# Add ArgoCD hostname to /etc/hosts (one-time setup)
+echo "127.0.0.1 argocd.gameapp.local" | sudo tee -a /etc/hosts
 ```
 
 **Expected Output:**
 ```bash
-Forwarding from 127.0.0.1:8090 -> 443
-Forwarding from [::1]:8090 -> 443
+127.0.0.1 argocd.gameapp.local
 ```
 
 ```bash
-# Open ArgoCD UI in browser
-open http://localhost:8090
+# Open ArgoCD UI in browser (via ingress)
+open http://argocd.gameapp.local:8080
+
 # Login credentials:
 # Username: admin
-# Password: EouvoDGN7grkK-Ag (from above command)
+# Password: (from the command you ran earlier)
 ```
+
+> **💡 Why Ingress Instead of Port-Forward?**
+> - More stable connection (survives pod restarts)
+> - Consistent with how you access Grafana and the game
+> - Production-like setup
 
 ### Step 2: Create Safe GitOps Structure
 
@@ -735,18 +740,18 @@ You've implemented professional GitOps workflows:
 - GitOps workflow operational and monitoring cluster state
 
 **✅ Current Status:**
-- **ArgoCD UI:** http://localhost:8090 (GitOps Management)
-- **Login:** admin / EouvoDGN7grkK-Ag  
+- **ArgoCD UI:** http://argocd.gameapp.local:8080 (GitOps Management)
+- **Login:** admin / (get password with kubectl command)
 - **Application:** humor-game-monitor
 - **Sync Status:** OutOfSync (expected)
 - **Health Status:** Missing (normal for monitoring setup)
 - **Resources Tracked:** 19
 
 **🎮 Important URL Differentiation:**
-- **Game Frontend:** https://gameapp.local:8080/ (Your game application)
-- **ArgoCD UI:** http://localhost:8090/ (GitOps management interface)
-- **Prometheus:** http://localhost:9090/ (Metrics monitoring)
-- **Grafana:** http://localhost:3000/ (Dashboard visualization)
+- **Game Frontend:** http://gameapp.local:8080/ (Your game application)
+- **ArgoCD UI:** http://argocd.gameapp.local:8080/ (GitOps management interface)
+- **Prometheus:** http://prometheus.gameapp.local:8080/ (Metrics monitoring)
+- **Grafana:** http://grafana.gameapp.local:8080/ (Dashboard visualization)
 
 **✅ GitOps Benefits Now Active:**
 - **Declarative deployments** - Infrastructure as Code

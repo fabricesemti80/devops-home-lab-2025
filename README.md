@@ -239,12 +239,10 @@ make test-endpoints
 kubectl get pods -n humor-game
 kubectl logs -l app=backend -n humor-game --tail=50
 
-# Monitoring access
-kubectl port-forward svc/grafana -n monitoring 3000:3000
-kubectl port-forward svc/prometheus -n monitoring 9090:9090
-
-# GitOps management
-kubectl port-forward svc/argocd-server -n argocd 8090:443
+# Access via ingress (no port-forwarding needed!)
+open http://grafana.gameapp.local:8080
+open http://prometheus.gameapp.local:8080
+open http://argocd.gameapp.local:8080
 ```
 
 ### **🧹 Cleanup Commands**

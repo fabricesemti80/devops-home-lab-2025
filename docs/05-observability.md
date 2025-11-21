@@ -178,12 +178,14 @@ chmod +x scripts/setup-monitoring-ingress.sh
 # Expected output:
 # ✅ Added prometheus.gameapp.local to /etc/hosts
 # ✅ Added grafana.gameapp.local to /etc/hosts
+# ✅ Added argocd.gameapp.local to /etc/hosts (for later GitOps milestone)
 # 🎉 Monitoring ingress setup complete!
 ```
 
 **Access URLs (No Port-Forwarding Required):**
 - **Prometheus**: http://prometheus.gameapp.local:8080
 - **Grafana**: http://grafana.gameapp.local:8080
+- **ArgoCD**: http://argocd.gameapp.local:8080 (will be used in GitOps milestone)
 
 > **💡 Benefits of Ingress Access:**
 > - No need to manage multiple port-forward processes
