@@ -188,8 +188,102 @@ git push
 |---------|-------|-------------------|-----|
 | **ArgoCD not syncing** | Git repository access issues | `kubectl logs -n argocd deployment/argocd-server` | Check Git credentials and repository permissions |
 | **Application shows OutOfSync** | Configuration drift detected | `kubectl get application -n argocd` | Force sync: `kubectl patch application <app-name> -n argocd -p '{"spec":{"syncPolicy":{"automated":{"prune":true,"selfHeal":true}}}}' --type=merge` |
+| **Application syncs then immediately goes OutOfSync** | ArgoCD detecting Kubernetes-managed metadata changes | `kubectl describe application <app-name> -n argocd` | Add ignoreDifferences for metadata fields (see detailed fix below) |
 | **ArgoCD health check failed** | Target resources not healthy | `kubectl get application <app-name> -n argocd -o yaml` | Check target namespace and resource health |
 | **GitOps conflicts** | Multiple controllers managing same resources | `kubectl get application -n argocd -o wide` | Ensure only ArgoCD manages production resources |
+
+#### **Detailed Fix: Application Syncs Then Immediately Goes OutOfSync**
+
+**Symptom:** ArgoCD application syncs successfully, shows "Synced" status, then within seconds/minutes automatically goes back to "OutOfSync" status, creating a continuous cycle.
+
+**Root Cause:** ArgoCD is detecting "drift" in Kubernetes-managed metadata fields that are automatically added or updated by Kubernetes itself (like `deployment.kubernetes.io/revision`, `metadata.generation`, `metadata.resourceVersion`). These fields change on every deployment but don't represent actual configuration drift.
+
+**How to Diagnose:**
+```bash
+# Check application status
+kubectl get application humor-game-monitor -n argocd
+
+# Watch for the sync cycle
+watch -n 2 'kubectl get application humor-game-monitor -n argocd'
+
+# Check what's causing the drift
+kubectl describe application humor-game-monitor -n argocd | grep -A 5 "OutOfSync"
+```
+
+**Fix:**
+Add comprehensive `ignoreDifferences` rules to your ArgoCD Application configuration:
+
+1. Edit `gitops-safe/argocd-application.yaml`:
+```yaml
+spec:
+  # ... existing config ...
+  
+  ignoreDifferences:
+  - group: apps
+    kind: Deployment
+    jsonPointers:
+    - /spec/template/metadata/annotations/deployment.kubernetes.io~1revision
+    - /metadata/annotations/deployment.kubernetes.io~1revision
+    - /spec/replicas  # Ignore if using HPA
+    - /spec/template/metadata/labels
+    - /metadata/generation
+    - /metadata/resourceVersion
+    - /metadata/uid
+    - /metadata/creationTimestamp
+    - /spec/progressDeadlineSeconds
+    - /spec/revisionHistoryLimit
+    - /spec/strategy
+    - /status
+  
+  - group: ''
+    kind: Service
+    jsonPointers:
+    - /spec/clusterIP
+    - /spec/clusterIPs
+    - /metadata/resourceVersion
+    - /metadata/uid
+    - /metadata/creationTimestamp
+    - /status
+  
+  - group: autoscaling
+    kind: HorizontalPodAutoscaler
+    jsonPointers:
+    - /status
+    - /metadata/resourceVersion
+    - /metadata/uid
+    - /metadata/creationTimestamp
+```
+
+2. Apply the changes:
+```bash
+kubectl apply -f gitops-safe/argocd-application.yaml
+```
+
+3. Verify the fix:
+```bash
+# Check status immediately
+kubectl get application humor-game-monitor -n argocd
+# Should show: Synced
+
+# Wait 30 seconds and check again
+sleep 30 && kubectl get application humor-game-monitor -n argocd
+# Should still show: Synced (not flipping to OutOfSync)
+```
+
+4. If using GitOps, commit the changes:
+```bash
+git add gitops-safe/argocd-application.yaml
+git commit -m "Fix: Add ignoreDifferences to prevent sync loops"
+git push
+```
+
+**What These Rules Do:**
+- Ignore Kubernetes-managed metadata that changes automatically
+- Ignore deployment revision tracking annotations
+- Ignore runtime status fields
+- Still detect actual configuration changes (env vars, images, resources, etc.)
+
+**Important:** These ignore rules are safe because they only ignore fields that Kubernetes manages automatically. Actual application configuration changes will still trigger OutOfSync status.
 
 ### **Milestone 6: Production Issues**
 

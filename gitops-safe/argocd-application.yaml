@@ -33,15 +33,33 @@ spec:
     kind: Deployment
     jsonPointers:
     - /spec/template/metadata/annotations/deployment.kubernetes.io~1revision
+    - /metadata/annotations/deployment.kubernetes.io~1revision
+    - /spec/replicas  # Ignore replica count changes (HPA may modify this)
+    - /spec/template/metadata/labels  # Ignore label changes
+    - /metadata/generation
+    - /metadata/resourceVersion
+    - /metadata/uid
+    - /metadata/creationTimestamp
+    - /spec/progressDeadlineSeconds
+    - /spec/revisionHistoryLimit
+    - /spec/strategy
+    - /status
   - group: ''
     kind: Service
     jsonPointers:
     - /spec/clusterIP
     - /spec/clusterIPs
+    - /metadata/resourceVersion
+    - /metadata/uid
+    - /metadata/creationTimestamp
+    - /status
   - group: autoscaling
     kind: HorizontalPodAutoscaler
     jsonPointers:
     - /status
+    - /metadata/resourceVersion
+    - /metadata/uid
+    - /metadata/creationTimestamp
   
   # Revision history limit
   revisionHistoryLimit: 10
