@@ -89,6 +89,7 @@ kubectl describe service <service-name> -n humor-game
 | **k3d cluster creation fails** | Insufficient resources or Docker issues | `docker system df` | Free up Docker resources, ensure 4GB+ RAM available |
 | **kubectl connection refused** | Cluster not running or context wrong | `k3d cluster list` | Start cluster: `k3d cluster start homelab` |
 | **Pods stuck in Pending** | Insufficient cluster resources | `kubectl describe pod <pod-name> -n humor-game` | Increase cluster resources: `k3d cluster create homelab --servers 1 --agents 2 --k3s-arg "--kube-apiserver-arg=--max-pods=100"` |
+| **Pods stuck in Terminating** | Cluster restart or network issues | `kubectl get pods -A \| grep Terminating` | Force delete: `kubectl delete pod <pod-name> -n <namespace> --force --grace-period=0` or run `make recover-cluster` |
 | **Image pull errors** | Image not built or wrong tag | `kubectl describe pod <pod-name> -n humor-game` | Build and import images: `docker build -t humor-game-backend:latest backend/` |
 
 ### **Milestone 3: Ingress Issues**
@@ -98,7 +99,79 @@ kubectl describe service <service-name> -n humor-game
 | **Ingress controller not found** | Ingress controller not installed | `kubectl get pods -n ingress-nginx` | Install ingress: `kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.8.2/deploy/static/provider/cloud/deploy.yaml` |
 | **Domain not resolving** | /etc/hosts not configured | `cat /etc/hosts \| grep gameapp` | Add entry: `127.0.0.1 gameapp.local` |
 | **Ingress shows 404** | Service selector mismatch | `kubectl get ingress -n humor-game -o yaml` | Check service names and ports in ingress.yaml |
+| **API routes return 404 or "Cannot POST"** | Ingress rewrite stripping /api prefix | `curl -X POST http://gameapp.local:8080/api/game/start` | Remove rewrite-target annotation, use simple Prefix paths (see below) |
 | **TLS certificate errors** | cert-manager not installed | `kubectl get pods -n cert-manager` | Install cert-manager for Let's Encrypt certificates |
+
+#### **Detailed Fix: API Routes Returning 404 or "Cannot POST"**
+
+**Symptom:** Game loads but shows error "The string did not match the expected pattern" when starting a game, or API calls return 404/Cannot POST errors.
+
+**Root Cause:** The ingress configuration has a `rewrite-target` annotation that strips the `/api` prefix from requests. When the frontend calls `/api/game/start`, the backend receives `/game/start`, which doesn't match any routes (backend expects `/api/game/start`).
+
+**How to Diagnose:**
+```bash
+# Test the API directly
+curl -X POST http://gameapp.local:8080/api/game/start \
+  -H "Content-Type: application/json" \
+  -d '{"username":"testuser"}'
+
+# If you see "Cannot POST /game/start", the rewrite is stripping /api
+# If you see a proper JSON response, the API is working correctly
+```
+
+**Fix:**
+1. Edit `k8s/ingress.yaml` and remove the rewrite annotation:
+```yaml
+metadata:
+  annotations:
+    # Remove or comment out this line:
+    # nginx.ingress.kubernetes.io/rewrite-target: /$2
+```
+
+2. Change the path configuration from complex regex to simple prefix:
+```yaml
+# BEFORE (incorrect):
+paths:
+  - path: /api(/|$)(.*)
+    pathType: ImplementationSpecific
+    backend:
+      service:
+        name: backend
+        port:
+          number: 3001
+
+# AFTER (correct):
+paths:
+  - path: /api
+    pathType: Prefix
+    backend:
+      service:
+        name: backend
+        port:
+          number: 3001
+```
+
+3. Apply the changes:
+```bash
+kubectl apply -f k8s/ingress.yaml
+```
+
+4. Test the API again:
+```bash
+curl -X POST http://gameapp.local:8080/api/game/start \
+  -H "Content-Type: application/json" \
+  -d '{"username":"testuser"}'
+
+# Should return: {"success":true,"message":"🎯 Game started!..."}
+```
+
+5. If using GitOps, update the gitops-safe directory:
+```bash
+cp k8s/ingress.yaml gitops-safe/base/ingress.yaml
+git add gitops-safe/base/ingress.yaml
+git commit -m "Fix: Remove ingress rewrite that was breaking API routes"
+git push
+```
 
 ### **Milestone 4: Monitoring Issues**
 
